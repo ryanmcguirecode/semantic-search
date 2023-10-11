@@ -7,4 +7,6 @@ def execute_command(cursor, command):
     cursor.execute(command)
     
 def insert_rows(cursor, table_name, columns, rows):
-    execute_values(cursor, f"INSERT INTO {table_name} ({columns}) VALUES %s", rows)
+    print(f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES %s")
+    # print(rows)
+    execute_values(cursor, f"INSERT INTO {table_name} ({', '.join(columns)}) VALUES %s", rows)

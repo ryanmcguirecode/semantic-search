@@ -2,6 +2,7 @@ from configparser import ConfigParser
 from connections import set_openai_key, postgreSQL_connect, postgreSQL_disconnect
 from embeddings import get_embedding, num_tokens, price_dollars
 from pg import register_vector, execute_command, insert_rows
+import numpy as np
 
 config = ConfigParser()
 config.read("credentials.ini")
@@ -18,7 +19,7 @@ print("Token count: ", num_tokens(test_string))
 print("Price: ${0}".format(price_dollars(test_string)))
 
 embedding = get_embedding(test_string)
-print("Embedding: ", embedding)
+print("Embedding: ", embedding[0:10])
 
 columns = ["embedding"]
 create_table_command = """
@@ -30,10 +31,10 @@ CREATE TABLE IF NOT EXISTS test_embeddings (
 execute_command(cursor, create_table_command)
 connection.commit()
 
-rows = [(embedding) for _ in range(1000)]
-insert_rows(cursor, "test_embeddings", columns, rows)
+
+insert_rows(cursor, "test_embeddings", columns, [(embedding,) for _ in range(10)])
 connection.commit()
 
 postgreSQL_disconnect(connection, cursor)
 
-CHUNK_SIZE = 512
+# CHUNK_SIZE = 512
