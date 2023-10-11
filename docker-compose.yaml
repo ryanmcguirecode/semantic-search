@@ -1,0 +1,10 @@
+services:
+  some-postgres:
+    image: ankane/pgvector
+    container_name: some-postgres
+    environment:
+      POSTGRES_PASSWORD: "1"
+    ports:
+      - "5432:5432"
+    volumes:
+       - ./data:/var/lib/postgresql/data

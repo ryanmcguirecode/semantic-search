@@ -31,9 +31,12 @@ CREATE TABLE IF NOT EXISTS test_embeddings (
 execute_command(cursor, create_table_command)
 connection.commit()
 
-
 insert_rows(cursor, "test_embeddings", columns, [(embedding,) for _ in range(10)])
 connection.commit()
+
+# Print row count
+cursor.execute("SELECT COUNT(*) FROM test_embeddings")
+print("Row count: ", cursor.fetchone()[0])
 
 postgreSQL_disconnect(connection, cursor)
 
