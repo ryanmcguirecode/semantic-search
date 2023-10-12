@@ -19,7 +19,6 @@ print("Token count: ", num_tokens(test_string))
 print("Price: ${0}".format(price_dollars(test_string)))
 
 embedding = get_embedding(test_string)
-print("Embedding: ", embedding[0:10])
 
 columns = ["embedding"]
 create_table_command = """
@@ -34,10 +33,4 @@ connection.commit()
 insert_rows(cursor, "test_embeddings", columns, [(embedding,) for _ in range(10)])
 connection.commit()
 
-# Print row count
-cursor.execute("SELECT COUNT(*) FROM test_embeddings")
-print("Row count: ", cursor.fetchone()[0])
-
 postgreSQL_disconnect(connection, cursor)
-
-# CHUNK_SIZE = 512
