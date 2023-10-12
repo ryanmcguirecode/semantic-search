@@ -1,7 +1,7 @@
 from configparser import ConfigParser
 from connections import set_openai_key, postgreSQL_connect, postgreSQL_disconnect
 from embeddings import get_embedding
-from pg import insert_rows, setup_vector
+from pg import insert_rows, setup_table
 import markdown
 
 def get_html_section(text, start_index):
@@ -26,34 +26,26 @@ def get_chunks(section, chunk_size):
     return chunks
 
 CHUNK_SIZE = 100
+FILE = "evolution_textbook.md"
 
 table_name = "evolution_embeddings"
-column_names = ["chapter", "subheading", "paragraph", "chunk", "content", "embedding"]
-create_table_command = f"""
-CREATE TABLE IF NOT EXISTS {table_name} (
-    id SERIAL PRIMARY KEY,
-    chapter INT,
-    subheading INT,
-    paragraph INT,
-    chunk INT,
-    content TEXT,
-    embedding vector(1536)
-)
-"""
+schema = {
+    "chapter": "INT",
+    "subheading": "INT",
+    "paragraph": "INT",
+    "chunk": "INT",
+    "content": "TEXT",
+    "embedding": "vector(1536)"
+}
 
 config = ConfigParser()
 config.read("credentials.ini")
 
 set_openai_key(config)
-connection = postgreSQL_connect(config)
-setup_vector(connection)
-cursor = connection.cursor()
+connection, cursor = postgreSQL_connect(config)
+setup_table(connection, cursor, table_name, schema)
 
-cursor.execute(create_table_command)
-connection.commit()
-
-
-text = markdown.markdown(open("evolution_textbook.md").read(), output_format="xhtml")
+text = markdown.markdown(open(FILE).read(), output_format="xhtml")
 
 text_length = len(text)
 current_chapter = 0
@@ -85,6 +77,7 @@ while section != "":
     
     section, start_index = get_html_section(text, start_index)
 
+column_names = list(schema.keys())
 insert_rows(cursor, table_name, column_names, new_rows)
 connection.commit()
 
