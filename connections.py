@@ -16,9 +16,8 @@ def postgreSQL_connect(config):
         user=user, 
         password=password
     )
-    cursor = connection.cursor()
 
-    return connection, cursor
+    return connection
 
 def postgreSQL_disconnect(connection, cursor):
     cursor.close()

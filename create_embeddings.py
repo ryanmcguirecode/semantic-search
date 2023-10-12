@@ -1,8 +1,7 @@
 from configparser import ConfigParser
 from connections import set_openai_key, postgreSQL_connect, postgreSQL_disconnect
-from embeddings import get_embedding, num_tokens, price_dollars
-from pg import register_vector, execute_command, insert_rows
-import numpy as np
+from embeddings import get_embedding
+from pg import insert_rows, setup_vector
 import markdown
 
 def get_html_section(text, start_index):
@@ -20,21 +19,24 @@ def get_html_section(text, start_index):
 def get_chunks(section, chunk_size):
     chunks = []
     i = 0
-    while i < len(section):
-        chunks.append(section[i:i+chunk_size])
+    text = section.split()
+    while i < len(text):
+        chunks.append(" ".join(text[i:i+chunk_size]))
         i += chunk_size
     return chunks
 
-CHUNK_SIZE = 250
+CHUNK_SIZE = 100
 
 table_name = "evolution_embeddings"
-column_names = ["chapter", "subheading", "paragraph", "embedding"]
+column_names = ["chapter", "subheading", "paragraph", "chunk", "content", "embedding"]
 create_table_command = f"""
 CREATE TABLE IF NOT EXISTS {table_name} (
     id SERIAL PRIMARY KEY,
     chapter INT,
     subheading INT,
     paragraph INT,
+    chunk INT,
+    content TEXT,
     embedding vector(1536)
 )
 """
@@ -43,10 +45,13 @@ config = ConfigParser()
 config.read("credentials.ini")
 
 set_openai_key(config)
-connection, cursor = postgreSQL_connect(config)
+connection = postgreSQL_connect(config)
+setup_vector(connection)
+cursor = connection.cursor()
 
-register_vector(cursor)
+cursor.execute(create_table_command)
 connection.commit()
+
 
 text = markdown.markdown(open("evolution_textbook.md").read(), output_format="xhtml")
 
@@ -69,18 +74,16 @@ while section != "":
         current_paragraph = 0
     elif section[:3] == "<p>":
         current_paragraph += 1
-        chunks = get_chunks(section, CHUNK_SIZE)
-        for chunk in chunks:
+        section_text = section[3:-4]
+        chunks = get_chunks(section_text, CHUNK_SIZE)
+        for current_chunk, chunk in enumerate(chunks):
             embedding = get_embedding(chunk)
-            new_rows.append((current_chapter, current_subsection, current_paragraph, embedding))
+            new_rows.append((current_chapter, current_subsection, current_paragraph, current_chunk, chunk, embedding))
     else:
         print("Error: section not recognized.", section)
         exit()
     
     section, start_index = get_html_section(text, start_index)
-
-execute_command(cursor, create_table_command)
-connection.commit()
 
 insert_rows(cursor, table_name, column_names, new_rows)
 connection.commit()
