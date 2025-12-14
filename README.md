@@ -1,1 +1,1 @@
-Experiment with using semantic search on top of my textbooks to help study for exams
+Experiment with semantic search on top of textbooks to help study for exams
